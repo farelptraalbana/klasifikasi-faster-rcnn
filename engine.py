@@ -13,7 +13,7 @@ from coco_eval import CocoEvaluator
 import utils
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, loss_history):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -39,6 +39,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
         losses_reduced = sum(loss for loss in loss_dict_reduced.values())
 
         loss_value = losses_reduced.item()
+
+        # Simpan nilai loss ke dalam history
+        loss_history.append(loss_value)
 
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
@@ -106,11 +109,13 @@ def evaluate(model, data_loader, device, labels_dict):
             all_true_labels.extend(target['labels'].cpu().numpy())
             all_pred_labels.extend(output['labels'].cpu().numpy())
 
-    # gather the stats from all processes
+ # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
     coco_evaluator.synchronize_between_processes()
 
+    coco_evaluator.synchronize_between_processes()
+    
     # accumulate predictions from all images
     coco_evaluator.accumulate()
     
@@ -145,3 +150,24 @@ def evaluate(model, data_loader, device, labels_dict):
 
     torch.set_num_threads(n_threads)
     return coco_evaluator
+
+def plot_loss(loss_history):
+    plt.figure(figsize=(10, 5))
+    plt.plot(loss_history, label='Loss', color='blue')
+    plt.title('Loss per Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid()
+    plt.savefig('saved_model/loss_plot.png')
+    plt.close()
+
+# Contoh penggunaan
+loss_history = []
+num_epochs = 10  # Ganti dengan jumlah epoch yang diinginkan
+
+for epoch in range(num_epochs):
+    train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10, loss_history=loss_history)
+
+# Setelah pelatihan selesai, plot grafik loss
+plot_loss(loss_history)
