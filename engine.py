@@ -128,8 +128,14 @@ def evaluate(model, data_loader, device, labels_dict):
     
     # extract and print mAP specifically
     stats = coco_evaluator.stats  
-    mAP = stats[0]  # mAP biasanya berada di indeks 0
-    print(f"mAP : {mAP:.3f}")
+    print("Stats:", stats)  # Debugging line to check the contents of stats
+
+    # Check if 'mAP' exists in stats
+    if isinstance(stats, dict) and 'mAP' in stats:
+        mAP = stats['mAP']
+        print(f"mAP : {mAP:.3f}")
+    else:
+        print("mAP tidak ditemukan dalam stats. Pastikan evaluasi berhasil.")
     
     # coco_evaluator.coco_eval object contains AP per class
     precisions = coco_evaluator.coco_eval.eval['precision']

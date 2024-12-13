@@ -14,7 +14,6 @@ from collections import defaultdict
 
 import utils
 
-
 class CocoEvaluator(object):
     def __init__(self, coco_gt, iou_types, labels_dict, distributed=False, device=None):
         self.distributed = distributed  # Store distributed flag
@@ -74,7 +73,19 @@ class CocoEvaluator(object):
         for iou_type, coco_eval in self.coco_eval.items():
             print("IoU metric: {}".format(iou_type))
             coco_eval.summarize()
-            self.stats[iou_type] = coco_eval.stats
+            # Misalkan coco_eval.stats adalah array
+            # Anda bisa mengisi stats dengan cara berikut:
+            if hasattr(coco_eval, 'stats'):
+                self.stats[iou_type] = {
+                    'mAP': coco_eval.stats[0],  # mAP
+                    'AP_50': coco_eval.stats[1],  # AP @ IoU=0.50
+                    'AP_75': coco_eval.stats[2],  # AP @ IoU=0.75
+                    'AP_s': coco_eval.stats[3],  # AP for small objects
+                    'AP_m': coco_eval.stats[4],  # AP for medium objects
+                    'AP_l': coco_eval.stats[5],  # AP for large objects
+                }
+            else:
+                print("coco_eval.stats tidak ditemukan.")
 
     def prepare(self, predictions, iou_type):
         if iou_type == "bbox":
@@ -171,11 +182,9 @@ class CocoEvaluator(object):
             )
         return coco_results
 
-
 def convert_to_xywh(boxes):
     xmin, ymin, xmax, ymax = boxes.unbind(1)
     return torch.stack((xmin, ymin, xmax - xmin, ymax - ymin), dim=1)
-
 
 def merge(img_ids, eval_imgs):
     all_img_ids = utils.all_gather(img_ids)
@@ -211,15 +220,6 @@ def create_common_coco_eval(coco_eval, img_ids, eval_imgs):
     coco_eval.evalImgs = eval_imgs
     coco_eval.params.imgIds = img_ids
     coco_eval._paramsEval = copy.deepcopy(coco_eval.params)
-
-
-#################################################################
-# From pycocotools, just removed the prints and fixed
-# a Python3 bug about unicode not defined
-#################################################################
-
-# Ideally, pycocotools wouldn't have hard-coded prints
-# so that we could avoid copy-pasting those two functions
 
 def createIndex(self):
     # create index
