@@ -44,10 +44,17 @@ class CocoEvaluator(object):
 
             self.eval_imgs[iou_type].append(eval_imgs)
 
+    # Di dalam coco_eval.py, dalam fungsi synchronize_between_processes
     def synchronize_between_processes(self):
         for iou_type in self.iou_types:
-            self.eval_imgs[iou_type] = np.concatenate(self.eval_imgs[iou_type], 2)
-            create_common_coco_eval(self.coco_eval[iou_type], self.img_ids, self.eval_imgs[iou_type])
+            # Periksa dimensi eval_imgs sebelum penggabungan
+            if len(self.eval_imgs[iou_type]) > 0 and self.eval_imgs[iou_type][0].ndim > 1:  # Kondisi yang ditambahkan
+                self.eval_imgs[iou_type] = np.concatenate(self.eval_imgs[iou_type], 2)
+                create_common_coco_eval(self.coco_eval[iou_type], self.img_ids, self.eval_imgs[iou_type])
+            else:
+                # Tangani kasus di mana eval_imgs kosong atau memiliki dimensi yang tidak cukup
+                print(f"Peringatan: eval_imgs[{iou_type}] kosong atau memiliki dimensi yang tidak cukup. Melewati penggabungan.")
+                # Logika debugging atau penanganan lebih lanjut dapat ditambahkan di sini jika perlu
 
     def accumulate(self):
         for coco_eval in self.coco_eval.values():
