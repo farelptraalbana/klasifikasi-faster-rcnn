@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import torch.distributed as dist
 
 import torchvision.models.detection.mask_rcnn
 
@@ -82,7 +83,10 @@ def evaluate(model, data_loader, device, labels_dict):
 
     coco = get_coco_api_from_dataset(data_loader.dataset)
     iou_types = _get_iou_types(model)
-    coco_evaluator = CocoEvaluator(coco, iou_types)
+    # Get the rank of the current process (if using distributed training)
+    is_distributed = dist.is_available() and dist.is_initialized()
+    rank = dist.get_rank() if is_distributed else 0
+    coco_evaluator = CocoEvaluator(coco, iou_types, labels_dict, distributed=is_distributed, device=device)
 
     all_true_labels = []  # Untuk menyimpan semua label ground truth
     all_pred_labels = []  # Untuk menyimpan semua label prediksi
@@ -109,7 +113,7 @@ def evaluate(model, data_loader, device, labels_dict):
             all_true_labels.extend(target['labels'].cpu().numpy())
             all_pred_labels.extend(output['labels'].cpu().numpy())
 
- # gather the stats from all processes
+    # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
     coco_evaluator.synchronize_between_processes()

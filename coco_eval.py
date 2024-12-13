@@ -16,7 +16,9 @@ import utils
 
 
 class CocoEvaluator(object):
-    def __init__(self, coco_gt, iou_types):
+    def __init__(self, coco_gt, iou_types, labels_dict, distributed=False, device=None):
+        self.distributed = distributed  # Store distributed flag
+        self.device = device
         assert isinstance(iou_types, (list, tuple))
         coco_gt = copy.deepcopy(coco_gt)
         self.coco_gt = coco_gt
