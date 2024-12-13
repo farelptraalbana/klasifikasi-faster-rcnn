@@ -161,13 +161,3 @@ def plot_loss(loss_history):
     plt.grid()
     plt.savefig('saved_model/loss_plot.png')
     plt.close()
-
-# Contoh penggunaan
-loss_history = []
-num_epochs = 10  # Ganti dengan jumlah epoch yang diinginkan
-
-for epoch in range(num_epochs):
-    train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10, loss_history=loss_history)
-
-# Setelah pelatihan selesai, plot grafik loss
-plot_loss(loss_history)
