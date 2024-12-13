@@ -192,7 +192,11 @@ def merge(img_ids, eval_imgs):
 
     # keep only unique (and in sorted order) images
     merged_img_ids, idx = np.unique(merged_img_ids, return_index=True)
-    merged_eval_imgs = merged_eval_imgs[..., idx]
+    
+    # Penambahan kode untuk mengatasi IndexError
+    idx = idx[idx < merged_eval_imgs.shape[2]] # Memastikan indeks tidak melebihi ukuran dimensi
+    
+    merged_eval_imgs = merged_eval_imgs[:, :, idx]
 
     return merged_img_ids, merged_eval_imgs
 
